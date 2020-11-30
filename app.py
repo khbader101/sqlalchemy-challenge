@@ -86,15 +86,48 @@ def tobs():
 
 
 
-#@app.route("/api/v1.0/<start>")
-#def start():
+@app.route("/api/v1.0/<start>")
+def start():
+    session = Session(engine)
+
+    
+    last_year = session.query(Measurement.date).order_by((Measurement.date).desc()).first()
+    prev_year = (dt.datetime.strptime(last_year[0],'%Y-%m-%d') - dt.timedelta(days=365)).strftime('%Y-%m-%d')
+
+    results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).filter(Measurement.date >= prev_year).all()
+
+    start_list = []
+
+    for min,avg,max in results:
+        start_dict = {}
+        start_dict["Min"] = min
+        start_dict["avg"] = avg
+        start_dict["Max"] = max
+        start_list.append(start_dict)
+
+    return jsonify(start_list)
 
 
+@app.route("/api/v1.0/<start>/<end>")
+def end():
+    session = Session(engine)
 
+    
+    last_year = session.query(Measurement.date).order_by((Measurement.date).desc()).first()
+    prev_year = (dt.datetime.strptime(last_year[0],'%Y-%m-%d') - dt.timedelta(days=365)).strftime('%Y-%m-%d')
 
-#@app.route("/api/v1.0/<start>/<end>")
-#def end():
+    results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).filter(Measurement.date >= prev_year, Measurement.date <= last_year).all()
 
+    start_end_list = []
+    
+    for min,avg,max in results:
+        start_end_dict = {}
+        start_end_dict["Min"] = min
+        start_end_dict["avg"] = avg
+        start_end_dict["Max"] = max
+        start_end_list.append(start_end_dict)
+
+    return jsonify(start_end_list)
 
 if __name__ == "__main__":
     app.run(debug=True)
